@@ -75,7 +75,6 @@ export default async function handler(req, res) {
     "1206": "102000011.png",   // Wukong
     "106": "101000005.png"     // Olivia
   };
-
   let fileName;
   
   // Determine if it's a character ID (3-6 digits) or skill ID (8-11 digits)
@@ -88,7 +87,7 @@ export default async function handler(req, res) {
   }
   
   if (!fileName) {
-    res.status(404).json({ error: 'ID not found' });
+    res.status(404).setHeader('Content-Type', 'application/json').json({ error: 'ID not found' });
     return;
   }
 
@@ -100,6 +99,7 @@ export default async function handler(req, res) {
     
     // Set appropriate headers for PNG image
     res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Disposition', 'inline; filename="' + fileName + '"');
     res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
     
     // Stream the file
@@ -109,7 +109,7 @@ export default async function handler(req, res) {
     stream.on('error', (error) => {
       console.error('Stream error:', error);
       if (!res.headersSent) {
-        res.status(500).json({ error: 'Error reading file' });
+        res.status(500).setHeader('Content-Type', 'application/json').json({ error: 'Error reading file' });
       }
     });
     
@@ -118,9 +118,9 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('File error:', error);
     if (error.code === 'ENOENT') {
-      res.status(404).json({ error: 'File not found' });
+      res.status(404).setHeader('Content-Type', 'application/json').json({ error: 'File not found' });
     } else {
-      res.status(500).json({ error: 'Error reading file' });
+      res.status(500).setHeader('Content-Type', 'application/json').json({ error: 'Error reading file' });
     }
   }
 }
@@ -128,6 +128,5 @@ export default async function handler(req, res) {
 export const config = {
   api: {
     responseLimit: false,
-    externalResolver: true,
   },
 };
