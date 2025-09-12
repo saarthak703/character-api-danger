@@ -1,7 +1,8 @@
 import { createReadStream } from 'fs';
 import { join } from 'path';
+import { stat } from 'fs/promises';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   const { id } = req.query;
   
   // Character ID to image mapping
@@ -94,16 +95,39 @@ export default function handler(req, res) {
   const filePath = join(process.cwd(), 'pngs', fileName);
   
   try {
-    const stream = createReadStream(filePath);
+    // Check if file exists
+    await stat(filePath);
+    
+    // Set appropriate headers for PNG image
     res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // Cache for 24 hours
+    
+    // Stream the file
+    const stream = createReadStream(filePath);
+    
+    // Handle stream errors
+    stream.on('error', (error) => {
+      console.error('Stream error:', error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Error reading file' });
+      }
+    });
+    
+    // Pipe the stream to response
     stream.pipe(res);
   } catch (error) {
-    res.status(500).json({ error: 'Error reading file' });
+    console.error('File error:', error);
+    if (error.code === 'ENOENT') {
+      res.status(404).json({ error: 'File not found' });
+    } else {
+      res.status(500).json({ error: 'Error reading file' });
+    }
   }
 }
 
 export const config = {
   api: {
+    responseLimit: false,
     externalResolver: true,
   },
 };
