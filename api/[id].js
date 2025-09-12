@@ -75,15 +75,19 @@ export default async function handler(req, res) {
     "1206": "102000011.png",   // Wukong
     "106": "101000005.png"     // Olivia
   };
+  
   let fileName;
   
+  // Remove .bin extension if present
+  const cleanId = id.replace(/\.bin$/, '');
+  
   // Determine if it's a character ID (3-6 digits) or skill ID (8-11 digits)
-  if (id.length >= 3 && id.length <= 6) {
+  if (cleanId.length >= 3 && cleanId.length <= 6) {
     // Character ID
-    fileName = characterMap[id];
-  } else if (id.length >= 8 && id.length <= 11) {
-    // Skill ID - use directly as filename
-    fileName = `${id}.png`;
+    fileName = characterMap[cleanId];
+  } else if (cleanId.length >= 8 && cleanId.length <= 11) {
+    // Skill ID - use directly as filename with .png extension
+    fileName = `${cleanId}.png`;
   }
   
   if (!fileName) {
