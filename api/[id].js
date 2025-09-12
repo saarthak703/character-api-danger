@@ -78,28 +78,28 @@ character_map = {
 
 @app.route('/api/<id>')
 def get_character_image(id):
-    # Remove .bin extension if present
-    if id.endswith('.bin'):
-        id = id[:-4]  # Remove the last 4 characters (.bin)
-    
-    # Determine if it's a character ID (3-6 digits) or skill ID (8-11 digits)
-    if len(id) >= 3 and len(id) <= 6:
-        # Character ID
-        filename = character_map.get(id)
-    elif len(id) >= 8 and len(id) <= 11:
-        # Skill ID - use directly as filename with .png extension
-        filename = f"{id}.png"
-    else:
-        return jsonify({"error": "Invalid ID format"}), 404
-    
-    if not filename:
-        return jsonify({"error": "ID not found"}), 404
-    
-    # GitHub raw content URL
-    github_url = f"https://raw.githubusercontent.com/saarthak703/character-api-danger/main/pngs/{filename}"
-    
     try:
-        # Fetch image from GitHub
+        # Remove .bin extension if present
+        if id.endswith('.bin'):
+            id = id[:-4]  # Remove the last 4 characters (.bin)
+        
+        # Determine if it's a character ID (3-6 digits) or skill ID (8-11 digits)
+        if len(id) >= 3 and len(id) <= 6:
+            # Character ID
+            filename = character_map.get(id)
+        elif len(id) >= 8 and len(id) <= 11:
+            # Skill ID - use directly as filename with .png extension
+            filename = f"{id}.png"
+        else:
+            return jsonify({"error": "Invalid ID format"}), 404
+        
+        if not filename:
+            return jsonify({"error": "ID not found"}), 404
+        
+        # GitHub raw content URL - SAHI URL
+        github_url = f"https://raw.githubusercontent.com/saarthak703/character-api-danger/main/pngs/{filename}"
+        
+        # Fetch image from GitHub with timeout
         response = requests.get(github_url, timeout=10)
         
         if response.status_code == 200:
@@ -114,11 +114,14 @@ def get_character_image(id):
                 download_name=filename
             )
         else:
-            return jsonify({"error": "File not found on GitHub"}), 404
+            return jsonify({"error": f"File not found on GitHub. Status: {response.status_code}, URL: {github_url}"}), 404
             
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Request timeout"}), 504
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Network error: {str(e)}"}), 500
     except Exception as e:
-        print(f"Error fetching image: {e}")
-        return jsonify({"error": "Error fetching image"}), 500
+        return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
