@@ -3,7 +3,12 @@ import { join } from 'path';
 import { stat } from 'fs/promises';
 
 export default async function handler(req, res) {
-  const { id } = req.query;
+  let { id } = req.query;
+  
+  // Remove .bin extension if present
+  if (id.endsWith('.bin')) {
+    id = id.slice(0, -4); // Remove the last 4 characters (.bin)
+  }
   
   // Character ID to image mapping
   const characterMap = {
@@ -78,16 +83,13 @@ export default async function handler(req, res) {
   
   let fileName;
   
-  // Remove .bin extension if present
-  const cleanId = id.replace(/\.bin$/, '');
-  
   // Determine if it's a character ID (3-6 digits) or skill ID (8-11 digits)
-  if (cleanId.length >= 3 && cleanId.length <= 6) {
+  if (id.length >= 3 && id.length <= 6) {
     // Character ID
-    fileName = characterMap[cleanId];
-  } else if (cleanId.length >= 8 && cleanId.length <= 11) {
+    fileName = characterMap[id];
+  } else if (id.length >= 8 && id.length <= 11) {
     // Skill ID - use directly as filename with .png extension
-    fileName = `${cleanId}.png`;
+    fileName = `${id}.png`;
   }
   
   if (!fileName) {
