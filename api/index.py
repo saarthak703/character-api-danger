@@ -1,6 +1,5 @@
-from flask import Flask, send_file, jsonify
+from flask import Flask, redirect, jsonify
 import requests
-from io import BytesIO
 import os
 
 app = Flask(__name__)
@@ -76,7 +75,7 @@ character_map = {
     "106": "101000005.png"     # Olivia
 }
 
-@app.route('/api/<id>')
+@app.route('/<id>')
 def get_character_image(id):
     try:
         # Remove .bin extension if present
@@ -96,25 +95,17 @@ def get_character_image(id):
         if not filename:
             return jsonify({"error": "ID not found"}), 404
         
-        # GitHub raw content URL - SAHI URL
+        # GitHub raw content URL
         github_url = f"https://raw.githubusercontent.com/saarthak703/character-api-danger/main/pngs/{filename}"
         
-        # Fetch image from GitHub with timeout
-        response = requests.get(github_url, timeout=10)
+        # Check if the file exists on GitHub
+        response = requests.head(github_url, timeout=5)
         
         if response.status_code == 200:
-            # Create a BytesIO object from the response content
-            img_data = BytesIO(response.content)
-            
-            # Return the image with proper headers
-            return send_file(
-                img_data,
-                mimetype='image/png',
-                as_attachment=False,
-                download_name=filename
-            )
+            # Redirect to the GitHub raw URL
+            return redirect(github_url, code=302)
         else:
-            return jsonify({"error": f"File not found on GitHub. Status: {response.status_code}, URL: {github_url}"}), 404
+            return jsonify({"error": f"File not found on GitHub. Status: {response.status_code}"}), 404
             
     except requests.exceptions.Timeout:
         return jsonify({"error": "Request timeout"}), 504
@@ -123,6 +114,5 @@ def get_character_image(id):
     except Exception as e:
         return jsonify({"error": f"Internal server error: {str(e)}"}), 500
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+# Vercel requires this to be named 'app' for serverless functions
+app = app
