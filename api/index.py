@@ -75,7 +75,11 @@ character_map = {
     "106": "101000005.png"     # Olivia
 }
 
-@app.route('/<id>')
+@app.route('/')
+def hello():
+    return jsonify({"message": "Character API is working! Use /api/<character-id>"})
+
+@app.route('/api/<id>')
 def get_character_image(id):
     try:
         # Remove .bin extension if present
